@@ -14,14 +14,15 @@
 フレームワーク：Flutter
 言語：Dart
 
-## アプリケーションを実行
+## アプリケーションの実行・動作確認
 ```
-$ cd ~/development/行きたいメモ_2025-3_個人制作/ikitai_memo_project
+# TerminalやCMDで以下を実行
+$ cd ~/<任意のディレクトリ>/ikitai_memo_project
 $ flutter run
 ```
 アプリケーション コードは ikitai_memo_project/lib/main.dart にあります。
 
-## ディレクトリ構成（2025-3-10時点
+## ディレクトリ構成
 .
 ├──.dart_tool
 │   └── 
@@ -34,7 +35,7 @@ $ flutter run
 ├── ios
 │   └──
 ├── lib
-│   └── main.dart
+│   └── **main.dart**
 ├── linux
 │   └──
 ├── macos
@@ -52,5 +53,4 @@ $ flutter run
 ├── analysis_options.yaml
 ├── ikitai_memo_project.iml
 ├── pubspec.lock
-├── pubspec.yaml
-└── README.md
+└── pubspec.yaml
