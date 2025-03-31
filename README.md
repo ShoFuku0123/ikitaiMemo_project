@@ -23,6 +23,7 @@ $ flutter run
 アプリケーション コードは ikitai_memo_project/lib/main.dart にあります。
 
 ## ディレクトリ構成
+```
 .
 ├──.dart_tool
 │   └── 
@@ -54,3 +55,4 @@ $ flutter run
 ├── ikitai_memo_project.iml
 ├── pubspec.lock
 └── pubspec.yaml
+```
