@@ -149,11 +149,7 @@ class _AddPageState extends State<AddPage> {
                           ),
                         ),
                       );
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) {
-                          return AddPage();
-                        })
-                      );
+                      formKey.currentState?.reset();
                     }
                   },
                   child: Text(
