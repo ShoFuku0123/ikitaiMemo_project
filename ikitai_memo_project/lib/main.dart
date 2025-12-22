@@ -18,6 +18,26 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Ikitai Memo App',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 255, 179, 92),
+          surface: const Color.fromARGB(255, 255, 219, 192),
+        ),
+        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 219, 192),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          centerTitle: true,
+          toolbarHeight: 75,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 255, 179, 92),
+            foregroundColor: Colors.white,
+            textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
       home: ListPage(),
     );
   }

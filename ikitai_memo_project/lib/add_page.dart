@@ -37,7 +37,7 @@ class _AddPageState extends State<AddPage> {
         centerTitle: true,
       ),
       // バックグラウンドカラー
-      backgroundColor: Color.fromARGB(255, 253, 220, 195),
+      // backgroundColor はテーマから自動適用
       body: Container(
         child: Form(
           key: formKey,
@@ -152,14 +152,8 @@ class _AddPageState extends State<AddPage> {
                       formKey.currentState?.reset();
                     }
                   },
-                  child: Text(
-                    '追加 !!!',
-                    style: TextStyle(
-                      fontSize: 25,
-                      color: Colors.white
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color.fromARGB(255, 255, 179, 92)),
+                  child: const Text('追加 !!!'),
+                  // style はテーマの elevatedButtonTheme から適用されるため削除
                 ),
               ),
               const SizedBox(height: 4.0),
@@ -176,10 +170,12 @@ class _AddPageState extends State<AddPage> {
                     'リストにもどる',
                     style: TextStyle(
                       fontSize: 17,
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color.fromARGB(255, 255, 255, 255)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                  ),
                 ),
               ),
             ],

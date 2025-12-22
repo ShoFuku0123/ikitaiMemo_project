@@ -76,13 +76,13 @@ class _ListPageState extends State<ListPage> {
         ),
         centerTitle: true,
       ),
-      backgroundColor: Color.fromARGB(255, 255, 219, 192),
+      // backgroundColor はテーマの scaffoldBackgroundColor が適用されるため削除
       body: Column(
         children: [
           // 都道府県フィルタリング用ドロップダウン
           Container(
-            color: Color.fromARGB(159, 255, 187, 113),
-            padding: const EdgeInsets.fromLTRB(30.0, 0, 280.0, 8.0),
+            color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.6),
+            padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 8.0),
             child: DropdownButton<String>(
               underline: Container(
                 height: 1.0,
