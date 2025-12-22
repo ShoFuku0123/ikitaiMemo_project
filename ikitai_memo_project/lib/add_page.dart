@@ -153,7 +153,10 @@ class _AddPageState extends State<AddPage> {
                     }
                   },
                   child: const Text('追加 !!!'),
-                  // style はテーマの elevatedButtonTheme から適用されるため削除
+                  style: ElevatedButton.styleFrom(
+                    elevation: 0,
+                    side: const BorderSide(color: Colors.grey, width: 1.0),
+                  ),
                 ),
               ),
               const SizedBox(height: 4.0),
@@ -175,6 +178,8 @@ class _AddPageState extends State<AddPage> {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.surface,
+                    elevation: 0,
+                    side: const BorderSide(color: Colors.grey, width: 1.0),
                   ),
                 ),
               ),

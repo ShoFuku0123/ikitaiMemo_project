@@ -21,13 +21,14 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          // アプリ全体のベースカラー。ボタンの押し色や影、
-          // colorScheme.primary などのデフォルト値に影響します。
-          seedColor: const Color(0xFFD35400), 
-          // カードの背景やダイアログ、ドロップダウンなどの背景色に影響します。
-          surface: const Color(0xFFFDF5E6),   
+          // アプリ全体のベースカラー。1番のソフトオレンジ。
+          seedColor: const Color(0xFFFFB37C), 
+          // カードの背景やダイアログ、ドロップダウンなどの背景色。1番のクリーム色。
+          surface: const Color(0xFFFDF5E6), 
+          // ボタンの背景色。1番のコーラルレッド。
+          primary: const Color(0xFFFF7F5C), 
         ),
-        // 画面全体の背景色（Scaffold のデフォルト背景色）
+        // 画面全体の背景色。1番のクリーム色。
         scaffoldBackgroundColor: const Color(0xFFFDF5E6),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent, // AppBar 自体は透明（背景画像を見せるため）
@@ -37,8 +38,8 @@ class MyApp extends StatelessWidget {
         // アプリ内の ElevatedButton 全体の共通デザイン
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            // ボタンの背景色（現在は seedColor と同じオレンジ）
-            backgroundColor: const Color(0xFFD35400),
+            // ボタンの背景色。1番のコーラルレッド。
+            backgroundColor: const Color(0xFFFF7F5C),
             // ボタン上の文字やアイコンの色
             foregroundColor: Colors.white,
             textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),

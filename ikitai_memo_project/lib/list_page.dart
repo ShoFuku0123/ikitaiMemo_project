@@ -77,7 +77,6 @@ class _ListPageState extends State<ListPage> {
         ),
         centerTitle: true,
       ),
-      // backgroundColor はテーマの scaffoldBackgroundColor が適用されるため削除
       body: Column(
         children: [
           // 都道府県フィルタリング用ドロップダウン
@@ -111,7 +110,17 @@ class _ListPageState extends State<ListPage> {
           ),
           Expanded(
             child: _filteredStoreList.isEmpty
-                ? Center(child: Text('右下のボタンから追加だよ〜'))
+                ? Center(
+                    child: Text(
+                      'まずは右下のボタンから\n追加してみよう！',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  )
                 : ListView.builder(
                     padding: EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 0),
                     itemCount: _filteredStoreList.length,
@@ -165,7 +174,7 @@ class _ListPageState extends State<ListPage> {
             width: _isExpanded ? 180 : 65,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primary,
-              borderRadius: BorderRadius.circular(12), // アールを小さく固定
+              borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.3),
