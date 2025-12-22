@@ -21,10 +21,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 255, 179, 92),
-          surface: const Color.fromARGB(255, 255, 219, 192),
+          seedColor: const Color(0xFFD35400), // 秋らしいオレンジ
+          surface: const Color(0xFFFDF5E6),   // 温かみのある背景色
         ),
-        scaffoldBackgroundColor: const Color.fromARGB(255, 255, 219, 192),
+        scaffoldBackgroundColor: const Color(0xFFFDF5E6),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
           centerTitle: true,
@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color.fromARGB(255, 255, 179, 92),
+            backgroundColor: const Color(0xFFD35400),
             foregroundColor: Colors.white,
             textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
