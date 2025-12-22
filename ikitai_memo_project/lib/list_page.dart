@@ -14,6 +14,7 @@ class _ListPageState extends State<ListPage> {
   List<Map<String, dynamic>> _storeList = [];
   List<Map<String, dynamic>> _filteredStoreList = [];
   String? _selectedPrefecture;
+  bool _isExpanded = false; // FABの展開状態
 
   // 都道府県リスト
   final List<String> _prefectures = [
@@ -136,16 +137,66 @@ class _ListPageState extends State<ListPage> {
           SizedBox(height: 27.0),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) {
-              return AddPage();
-            })
-          );
-          _loadStores(); // データ追加後にリストを更新
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: MouseRegion(
+        onEnter: (_) => setState(() => _isExpanded = true),
+        onExit: (_) => setState(() => _isExpanded = false),
+        child: GestureDetector(
+          onTap: () async {
+            // macOS/Webなどのデスクトップ環境、または既に展開されている場合は遷移
+            // それ以外（モバイルの1回目タップ）は展開のみ
+            final bool isDesktop = Theme.of(context).platform == TargetPlatform.macOS || 
+                                 Theme.of(context).platform == TargetPlatform.windows || 
+                                 Theme.of(context).platform == TargetPlatform.linux;
+
+            if (isDesktop || _isExpanded) {
+              await Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => AddPage()),
+              );
+              _loadStores();
+              setState(() => _isExpanded = false);
+            } else {
+              setState(() => _isExpanded = true);
+            }
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            height: 65,
+            width: _isExpanded ? 180 : 65,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
+              borderRadius: BorderRadius.circular(12), // アールを小さく固定
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add, color: Colors.white, size: 30),
+                if (_isExpanded)
+                  const Flexible(
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 8.0),
+                      child: Text(
+                        '新規追加！',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

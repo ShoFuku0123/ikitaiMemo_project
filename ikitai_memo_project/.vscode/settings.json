@@ -1,6 +1,5 @@
 {
     "cmake.ignoreCMakeListsMissing": true,
-    "cSpell.words": [
-        "yusei"
-    ]
+    "cSpell.words": ["yusei"],
+    "editor.colorDecorators": true
 }
