@@ -174,11 +174,7 @@ class _AddPageState extends State<AddPage> {
                 height: 100,
                 child: ElevatedButton(
                   onPressed: (){
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) {
-                        return ListPage();
-                      })
-                    );
+                    Navigator.pop(context);
                   },
                   child: Text(
                     'リストにもどる',
