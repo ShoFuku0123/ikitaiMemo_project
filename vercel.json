@@ -1,4 +1,10 @@
 {
+  "github": {
+    "silent": true
+  },
+  "installCommand": "bash install-flutter.sh",
+  "buildCommand": "echo 'Build handled by install script'",
+  "outputDirectory": "build/web",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
