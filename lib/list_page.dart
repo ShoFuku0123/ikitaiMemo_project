@@ -232,6 +232,14 @@ class _ListPageState extends State<ListPage> {
                         elevation: 2,
                         child: ListTile(
                           contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                          onTap: () async {
+                            await Navigator.of(context).push(
+                              MaterialPageRoute(builder: (context) {
+                                return AddPage(storeToEdit: Map<String, dynamic>.from(store));
+                              })
+                            );
+                            _loadStores();
+                          },
                           title: Text(
                             '${store['prefecture']} ${store['city'] ?? ''}\n${store['storeName']}',
                           ),

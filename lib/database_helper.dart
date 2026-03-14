@@ -135,6 +135,30 @@ class DatabaseHelper {
     });
   }
 
+  // データとタグの同時更新
+  Future<int> updateStoreWithTags(int id, String prefecture, String city, String storeName, List<int> tagIds) async {
+    final db = await database;
+    return await db.transaction((txn) async {
+      int count = await txn.update(
+        'stores',
+        {'prefecture': prefecture, 'city': city, 'storeName': storeName},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      
+      await txn.delete('store_tags', where: 'store_id = ?', whereArgs: [id]);
+      
+      for (int tagId in tagIds) {
+        await txn.insert(
+          'store_tags',
+          {'store_id': id, 'tag_id': tagId},
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      return count;
+    });
+  }
+
   // データ取得
   Future<List<Map<String, dynamic>>> getStores() async {
     final db = await database;

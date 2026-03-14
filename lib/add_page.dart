@@ -5,6 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'database_helper.dart';
 
 class AddPage extends StatefulWidget {
+  final Map<String, dynamic>? storeToEdit;
+
+  const AddPage({Key? key, this.storeToEdit}) : super(key: key);
+
   @override
   _AddPageState createState() => _AddPageState();
 }
@@ -83,21 +87,26 @@ class _AddPageState extends State<AddPage> {
   @override
   void initState() {
     super.initState();
-    _loadData();
-    
-    // Hack to trigger Autocomplete options on focus
-    _prefFocus.addListener(() {
-      if (_prefFocus.hasFocus) {
-        final text = _prefController.text;
-        _prefController.text = text + ' ';
-        _prefController.text = text;
-      }
-    });
-    _cityFocus.addListener(() {
-      if (_cityFocus.hasFocus) {
-        final text = _cityController.text;
-        _cityController.text = text + ' ';
-        _cityController.text = text;
+    _loadData().then((_) {
+      if (widget.storeToEdit != null) {
+        final store = widget.storeToEdit!;
+        setState(() {
+          prefecture = store['prefecture'] ?? '';
+          city = store['city'] ?? '';
+          storeName = store['storeName'] ?? '';
+          
+          if (prefecture.isNotEmpty) {
+            currentCities = citiesData[prefecture] ?? [];
+            _prefController.text = prefecture;
+          }
+          if (city.isNotEmpty) {
+            _cityController.text = city;
+          }
+          if (store['tags'] != null) {
+            final tags = store['tags'] as List;
+            selectedTags = tags.map((t) => t['id'] as int).toSet();
+          }
+        });
       }
     });
   }
@@ -187,6 +196,8 @@ class _AddPageState extends State<AddPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.storeToEdit != null;
+
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 75,
@@ -195,7 +206,7 @@ class _AddPageState extends State<AddPage> {
           fit: BoxFit.fitWidth,
         ),
         title: Text(
-          '行きたいメモ',
+          isEditing ? '編集する' : '行きたいメモ',
           style: GoogleFonts.yuseiMagic(
             color: Color.fromARGB(255, 0, 0, 0),
             fontSize: 52,
@@ -214,13 +225,13 @@ class _AddPageState extends State<AddPage> {
                 // 都道府県
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16.0, 32.0, 16.0, 16.0),
-                  child: Autocomplete<Map<String, String>>(
+                  child: RawAutocomplete<Map<String, String>>(
+                    textEditingController: _prefController,
+                    focusNode: _prefFocus,
                     displayStringForOption: (option) => option['name']!,
                     optionsBuilder: (TextEditingValue textEditingValue) {
                       final text = textEditingValue.text.trim();
-                      if (text.isEmpty) {
-                        return prefecturesData;
-                      }
+                      if (text.isEmpty) return prefecturesData;
                       return prefecturesData.where((option) {
                         return option['name']!.contains(text) || option['kana']!.contains(text);
                       });
@@ -234,12 +245,9 @@ class _AddPageState extends State<AddPage> {
                       });
                     },
                     fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
-                      if (focusNode == this._prefFocus && controller != this._prefController) {
-                         // Attach controller instance workaround logic if using custom FocusNode
-                      }
                       return TextFormField(
                         controller: controller,
-                        focusNode: _prefFocus,
+                        focusNode: focusNode,
                         style: const TextStyle(fontSize: 20),
                         decoration: const InputDecoration(
                           labelText: '都道府県',
@@ -251,6 +259,13 @@ class _AddPageState extends State<AddPage> {
                           ),
                           suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
+                        onTap: () {
+                          // Force Autocomplete options to show up even if empty
+                          if (controller.text.isEmpty) {
+                            controller.text = ' ';
+                            controller.text = '';
+                          }
+                        },
                         onChanged: (value) {
                           prefecture = value;
                           if (citiesData.containsKey(value)) {
@@ -273,20 +288,46 @@ class _AddPageState extends State<AddPage> {
                         },
                       );
                     },
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 4.0,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 200, maxWidth: 350),
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final option = options.elementAt(index);
+                                return InkWell(
+                                  onTap: () => onSelected(option),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Text(option['name']!, style: const TextStyle(fontSize: 18)),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 
                 // 市区町村
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
-                  child: Autocomplete<Map<String, dynamic>>(
+                  child: RawAutocomplete<Map<String, dynamic>>(
+                    textEditingController: _cityController,
+                    focusNode: _cityFocus,
                     displayStringForOption: (option) => option['name'] as String,
                     optionsBuilder: (TextEditingValue textEditingValue) {
                       if (currentCities.isEmpty) return const Iterable<Map<String, dynamic>>.empty();
                       final text = textEditingValue.text.trim();
-                      if (text.isEmpty) {
-                        return currentCities;
-                      }
+                      if (text.isEmpty) return currentCities;
                       return currentCities.where((option) {
                         final name = option['name'] as String;
                         final kana = option['kana'] as String;
@@ -301,7 +342,7 @@ class _AddPageState extends State<AddPage> {
                     fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
                       return TextFormField(
                         controller: controller,
-                        focusNode: _cityFocus,
+                        focusNode: focusNode,
                         style: const TextStyle(fontSize: 20),
                         enabled: prefecture.isNotEmpty && currentCities.isNotEmpty,
                         decoration: InputDecoration(
@@ -314,6 +355,12 @@ class _AddPageState extends State<AddPage> {
                           ),
                           suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
+                        onTap: () {
+                          if (controller.text.isEmpty && currentCities.isNotEmpty) {
+                            controller.text = ' ';
+                            controller.text = '';
+                          }
+                        },
                         validator: (value) {
                           if (value == null || value.isEmpty) return '入力してください';
                           if (!currentCities.any((c) => c['name'] == value)) return 'リストから正しい市区町村を選択してください';
@@ -324,6 +371,32 @@ class _AddPageState extends State<AddPage> {
                         },
                       );
                     },
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 4.0,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxHeight: 200, maxWidth: 350),
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              itemBuilder: (BuildContext context, int index) {
+                                final option = options.elementAt(index);
+                                return InkWell(
+                                  onTap: () => onSelected(option),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Text(option['name'] as String, style: const TextStyle(fontSize: 18)),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
 
@@ -331,6 +404,7 @@ class _AddPageState extends State<AddPage> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: TextFormField(
+                    initialValue: isEditing ? widget.storeToEdit!['storeName'] : null,
                     style: TextStyle(fontSize: 20),
                     decoration: const InputDecoration(
                       labelText: '施設名 or キーワード',
@@ -405,7 +479,7 @@ class _AddPageState extends State<AddPage> {
                 ),
 
                 const SizedBox(height: 24.0),
-                // 追加ボタン
+                // 追加/更新ボタン
                 Container(
                   padding: const EdgeInsets.fromLTRB(64.0, 16.0, 64.0, 8.0),
                   width: double.infinity,
@@ -414,30 +488,50 @@ class _AddPageState extends State<AddPage> {
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
                         formKey.currentState?.save();
-                        await DatabaseHelper.instance.insertStoreWithTags(
-                          prefecture,
-                          city,
-                          storeName,
-                          selectedTags.toList()
-                        );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            padding: EdgeInsets.symmetric(vertical: 30),
-                            content: Text(
-                              '〜〜追加完了〜〜',
-                              style: TextStyle(fontSize: 20),
+                        
+                        if (isEditing) {
+                          await DatabaseHelper.instance.updateStoreWithTags(
+                            widget.storeToEdit!['id'] as int,
+                            prefecture,
+                            city,
+                            storeName,
+                            selectedTags.toList()
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              padding: EdgeInsets.symmetric(vertical: 30),
+                              content: Text(
+                                '〜〜更新完了〜〜',
+                                style: TextStyle(fontSize: 20),
+                              ),
                             ),
-                          ),
-                        );
-                        // reset form correctly
-                        Navigator.of(context).pop();
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => AddPage())
-                        );
+                          );
+                          Navigator.of(context).pop();
+                        } else {
+                          await DatabaseHelper.instance.insertStoreWithTags(
+                            prefecture,
+                            city,
+                            storeName,
+                            selectedTags.toList()
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              padding: EdgeInsets.symmetric(vertical: 30),
+                              content: Text(
+                                '〜〜追加完了〜〜',
+                                style: TextStyle(fontSize: 20),
+                              ),
+                            ),
+                          );
+                          Navigator.of(context).pop();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (context) => const AddPage())
+                          );
+                        }
                       }
                     },
                     child: Text(
-                      '追加 !!!',
+                      isEditing ? '更新 !!!' : '追加 !!!',
                       style: TextStyle(fontSize: 25, color: Colors.white),
                     ),
                     style: ElevatedButton.styleFrom(backgroundColor: const Color.fromARGB(255, 255, 179, 92)),
