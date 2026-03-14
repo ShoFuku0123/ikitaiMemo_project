@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 import 'database_helper.dart';
 import 'add_page.dart';
 
@@ -13,18 +11,22 @@ class ListPage extends StatefulWidget {
 class _ListPageState extends State<ListPage> {
   List<Map<String, dynamic>> _storeList = [];
   List<Map<String, dynamic>> _filteredStoreList = [];
+  
+  List<Map<String, dynamic>> _allTags = [];
+  
   String? _selectedPrefecture;
+  List<String> _availableCities = [];
+  List<String> _selectedCities = [];
+  List<int> _selectedTagIds = [];
 
-  // 都道府県リスト
   final List<String> _prefectures = [
-    'すべて',
-    '北海道', '青森', '岩手', '宮城', '秋田', '山形', '福島',
-    '茨城', '栃木', '群馬', '埼玉', '千葉', '東京', '神奈川',
-    '新潟', '富山', '石川', '福井', '山梨', '長野', '岐阜',
-    '静岡', '愛知', '三重', '滋賀', '京都', '大阪', '兵庫',
-    '奈良', '和歌山', '鳥取', '島根', '岡山', '広島', '山口',
-    '徳島', '香川', '愛媛', '高知', '福岡', '佐賀', '長崎',
-    '熊本', '大分', '宮崎', '鹿児島', '沖縄'
+    'すべて', '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+    '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+    '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
+    '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
+    '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+    '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
+    '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
   ];
 
   @override
@@ -34,27 +36,58 @@ class _ListPageState extends State<ListPage> {
   }
 
   Future<void> _loadStores() async {
-    final data = await DatabaseHelper.instance.getStores();
+    final data = await DatabaseHelper.instance.getStoresWithTags();
+    final tagsData = await DatabaseHelper.instance.getAllTags();
     setState(() {
       _storeList = data;
+      _allTags = tagsData;
+      _updateAvailableCities();
       _filterStores();
     });
   }
 
+  void _updateAvailableCities() {
+    _selectedCities.clear();
+    if (_selectedPrefecture == null || _selectedPrefecture == 'すべて') {
+      _availableCities = [];
+    } else {
+      _availableCities = _storeList
+          .where((s) => s['prefecture'] == _selectedPrefecture && s['city'] != null && s['city'].toString().isNotEmpty)
+          .map((s) => s['city'] as String)
+          .toSet()
+          .toList();
+      _availableCities.sort();
+    }
+  }
+
   Future<void> _deleteStore(int id) async {
     await DatabaseHelper.instance.deleteStore(id);
-    _loadStores(); // 削除後にリストを更新
+    _loadStores();
   }
 
   void _filterStores() {
     setState(() {
-      if (_selectedPrefecture == null || _selectedPrefecture == 'すべて') {
-        _filteredStoreList = List.from(_storeList);
-      } else {
-        _filteredStoreList = _storeList
-            .where((store) => store['prefecture'] == _selectedPrefecture)
-            .toList();
-      }
+      _filteredStoreList = _storeList.where((store) {
+        // 都道府県フィルタ
+        if (_selectedPrefecture != null && _selectedPrefecture != 'すべて') {
+          if (store['prefecture'] != _selectedPrefecture) return false;
+        }
+        
+        // 市区町村フィルタ
+        if (_selectedCities.isNotEmpty) {
+          if (!store.containsKey('city') || !_selectedCities.contains(store['city'])) return false;
+        }
+        
+        // タグフィルタ (AND検索)
+        if (_selectedTagIds.isNotEmpty) {
+          final storeTags = (store['tags'] as List).map((t) => t['id'] as int).toList();
+          for (var tagId in _selectedTagIds) {
+            if (!storeTags.contains(tagId)) return false;
+          }
+        }
+        
+        return true;
+      }).toList();
     });
   }
 
@@ -78,54 +111,155 @@ class _ListPageState extends State<ListPage> {
       ),
       backgroundColor: Color.fromARGB(255, 255, 219, 192),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 都道府県フィルタリング用ドロップダウン
+          // 都道府県フィルタ
           Container(
             color: Color.fromARGB(159, 255, 187, 113),
-            padding: const EdgeInsets.fromLTRB(30.0, 0, 280.0, 8.0),
-            child: DropdownButton<String>(
-              underline: Container(
-                height: 1.0,
-                color: Colors.black,
-              ),
-              style: TextStyle(
-                fontSize: 22.0,
-                color: Colors.black,
-              ),
-              isExpanded: true,
-              value: _selectedPrefecture ?? 'すべて',
-              items: _prefectures.map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedPrefecture = value;
-                  _filterStores(); // 絞り込み
-                });
-              },
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              children: [
+                Text('都道府県: ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButton<String>(
+                    isExpanded: true,
+                    underline: Container(height: 1.0, color: Colors.black),
+                    style: TextStyle(fontSize: 20.0, color: Colors.black),
+                    value: _selectedPrefecture ?? 'すべて',
+                    items: _prefectures.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedPrefecture = value;
+                        _updateAvailableCities();
+                        _filterStores();
+                      });
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
+
+          // 市区町村フィルタ
+          if (_availableCities.isNotEmpty)
+            Container(
+              color: Color.fromARGB(100, 255, 187, 113),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: _availableCities.map((city) {
+                    final isSelected = _selectedCities.contains(city);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: FilterChip(
+                        label: Text(city),
+                        selected: isSelected,
+                        selectedColor: Colors.orange.shade300,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedCities.add(city);
+                            } else {
+                              _selectedCities.remove(city);
+                            }
+                            _filterStores();
+                          });
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+
+          // タグフィルタ
+          if (_allTags.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Icon(Icons.local_offer, size: 20, color: Colors.grey[700]),
+                    SizedBox(width: 8),
+                    ..._allTags.map((tag) {
+                      final isSelected = _selectedTagIds.contains(tag['id']);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FilterChip(
+                          label: Text(tag['name'] as String),
+                          selected: isSelected,
+                          selectedColor: Colors.blue.shade200,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedTagIds.add(tag['id'] as int);
+                              } else {
+                                _selectedTagIds.remove(tag['id'] as int);
+                              }
+                              _filterStores();
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ),
+
+          Divider(height: 1),
+
           Expanded(
             child: _filteredStoreList.isEmpty
-                ? Center(child: Text('右下のボタンから追加だよ〜'))
+                ? Center(child: Text('条件に合うお店がありません\n右下のボタンから追加してね！', textAlign: TextAlign.center))
                 : ListView.builder(
-                    padding: EdgeInsets.fromLTRB(16.0, 20.0, 16.0, 0),
+                    padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 80.0), // Padding to avoid FAB overlay
                     itemCount: _filteredStoreList.length,
                     itemBuilder: (context, index) {
                       final store = _filteredStoreList[index];
+                      final tags = store['tags'] as List;
+                      
                       return Card(
+                        margin: EdgeInsets.only(bottom: 12.0),
+                        elevation: 2,
                         child: ListTile(
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                           title: Text(
-                              '${store['prefecture']}： ${store['storeName']}'),
-                              titleTextStyle: TextStyle(
-                                fontSize: 20.0,
-                                color: const Color.fromARGB(255, 22, 22, 22),
-                              ),
+                            '${store['prefecture']} ${store['city'] ?? ''}\n${store['storeName']}',
+                          ),
+                          subtitle: tags.isNotEmpty
+                              ? Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Wrap(
+                                    spacing: 4.0,
+                                    runSpacing: 4.0,
+                                    children: tags.map((t) => Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade50,
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.blue.shade200)
+                                      ),
+                                      child: Text('#${t['name']}', style: TextStyle(fontSize: 12, color: Colors.blue.shade700)),
+                                    )).toList(),
+                                  ),
+                                )
+                              : null,
+                          titleTextStyle: TextStyle(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                            color: const Color.fromARGB(255, 22, 22, 22),
+                          ),
                           trailing: IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
+                            icon: Icon(Icons.delete, color: Colors.red.shade400),
                             onPressed: () => _deleteStore(store['id']),
                           ),
                         ),
@@ -133,7 +267,6 @@ class _ListPageState extends State<ListPage> {
                     },
                   ),
           ),
-          SizedBox(height: 27.0),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -143,9 +276,10 @@ class _ListPageState extends State<ListPage> {
               return AddPage();
             })
           );
-          _loadStores(); // データ追加後にリストを更新
+          _loadStores();
         },
         child: const Icon(Icons.add),
+        backgroundColor: Colors.orange.shade400,
       ),
     );
   }
